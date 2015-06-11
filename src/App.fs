@@ -35,6 +35,11 @@ let details id =
     | Some album -> html (View.details album)
     | None -> never
 
+let manage = warbler (fun _ ->
+    Db.getContext()
+    |> Db.getAlbumsDetails
+    |> View.manage
+    |> html)
 
 let webPart = 
     choose [
@@ -42,6 +47,8 @@ let webPart =
         path Path.Store.overview >>= overview
         path Path.Store.browse >>= browse
         pathScan Path.Store.details details
+
+        path Path.Admin.manage >>= manage
 
         pathRegex "(.*)\.(css|png|gif)" >>= Files.browseHome
 

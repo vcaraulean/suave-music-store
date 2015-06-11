@@ -88,3 +88,29 @@ let notFound = [
         aHref Path.home (text "Home")
     ]
 ]
+
+let table x = tag "table" [] (flatten x)
+let th x = tag "th" [] (flatten x)
+let tr x = tag "tr" [] (flatten x)
+let td x = tag "td" [] (flatten x)
+
+let truncate k (s: string) =
+    if s.Length > k then
+        s.Substring (0, k-3) + "..."
+    else
+        s
+
+let manage (albums: Db.AlbumDetails list) = [
+    h2 "Index"
+    table [
+        yield tr [
+            for t in ["Artist"; "Title"; "Genre"; "Price"] -> th [text t]
+        ]
+
+        for album in albums ->
+        tr [
+            for t in [truncate 25 album.Artist; truncate 25 album.Title; album.Genre; formatDec album.Price] ->
+                td [text t]
+        ]
+    ]
+]
