@@ -35,6 +35,19 @@ let details id =
     | Some album -> html (View.details album)
     | None -> never
 
+let deleteAlbum id =
+    let ctx = Db.getContext()
+    match Db.getAlbum id ctx with
+    | Some album -> 
+        choose [
+            GET >>= warbler(fun _ -> html (View.deleteAlbum album.Title))
+            POST >>= warbler(fun _ -> 
+                Db.deleteAlbum album ctx
+                Redirection.FOUND Path.Admin.manage
+            )
+        ]
+    | None _ -> never
+
 let manage = warbler (fun _ ->
     Db.getContext()
     |> Db.getAlbumsDetails
@@ -49,6 +62,7 @@ let webPart =
         pathScan Path.Store.details details
 
         path Path.Admin.manage >>= manage
+        pathScan Path.Admin.delete deleteAlbum
 
         pathRegex "(.*)\.(css|png|gif)" >>= Files.browseHome
 
