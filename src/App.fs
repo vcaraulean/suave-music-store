@@ -1,16 +1,21 @@
 ﻿module SuaveMusicStore.App
 
 open Suave
+open Suave.Form
 open Suave.Http
 open Suave.Http.Applicatives
 open Suave.Http.Successful
 open Suave.Http.RequestErrors
+open Suave.Model.Binding
 open Suave.Types
 open Suave.Web
 
 let html container =
     OK (View.index container)
     >>= Writers.setMimeType "text/html; charset=utf-8"
+
+let bindToForm form handler =
+    bindReq (bindForm form) handler BAD_REQUEST
 
 let browse = 
     request (fun r -> 
@@ -54,6 +59,19 @@ let manage = warbler (fun _ ->
     |> View.manage
     |> html)
 
+let createAlbum = 
+    let ctx = Db.getContext()
+    choose [
+        GET >>= warbler (fun _ -> 
+            let genres = Db.getGenres ctx |> List.map (fun g -> decimal g.GenreId, g.Name)
+            let artists = Db.getArtists ctx |> List.map (fun f -> decimal f.ArtistId, f.Name)
+            html (View.createAlbum genres artists))
+        POST >>= bindToForm Form.album (fun form ->
+            Db.createAlbum (int form.ArtistId, int form.GenreId, form.Title, form.Price) ctx 
+            Redirection.FOUND Path.Admin.manage
+        )
+    ]
+
 let webPart = 
     choose [
         path Path.home >>= html View.home
@@ -63,6 +81,7 @@ let webPart =
 
         path Path.Admin.manage >>= manage
         pathScan Path.Admin.delete deleteAlbum
+        path Path.Admin.createAlbum >>= createAlbum
 
         pathRegex "(.*)\.(css|png|gif)" >>= Files.browseHome
 

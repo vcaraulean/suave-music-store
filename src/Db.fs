@@ -36,7 +36,7 @@ let getAlbumDetails id (ctx : DbContext) : AlbumDetails option =
 
 
 let getAlbumsDetails (ctx : DbContext) : AlbumDetails list =
-    ctx.``[dbo].[AlbumDetails]`` |> Seq.toList
+    ctx.``[dbo].[AlbumDetails]`` |> Seq.sortBy (fun f -> f.Artist) |> Seq.toList
 
 
 let getAlbum id (ctx:DbContext) : Album option = 
@@ -50,3 +50,11 @@ let getAlbum id (ctx:DbContext) : Album option =
 let deleteAlbum (album : Album) (ctx:DbContext) =
     album.Delete()
     ctx.SubmitUpdates()
+
+let getArtists (ctx : DbContext) = 
+    ctx.``[dbo].[Artists]`` |> Seq.toList
+
+let createAlbum (artistId : int, genreId : int, title : string, price : decimal) (ctx : DbContext) =
+    ctx.``[dbo].[Albums]``.Create(artistId, genreId, price, title) |> ignore
+    ctx.SubmitUpdates()
+

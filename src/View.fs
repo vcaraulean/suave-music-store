@@ -2,8 +2,10 @@
 
 open System
 open Suave.Html
+open Suave.Form
 
 let divId id = divAttr ["id", id]
+let divClass c = divAttr ["class", c]
 let h1 xml = tag "h1" [] xml
 let h2 xml = tag "h2" [] (text xml)
 let aHref href = tag "a" ["href", href]
@@ -12,6 +14,8 @@ let li = tag "li" []
 let imgSrc url = imgAttr ["src", url]
 let em s = tag "em" [] (text s)
 let strong s = tag "strong" [] (text s)
+let fieldset x = tag "fieldset" [] (flatten x)
+let legend txt = tag "legend" [] (text txt)
 
 let cssLink href = linkAttr ["href", href; " rel", "stylesheet"; " type", "text/css"]
 
@@ -124,6 +128,11 @@ let truncate k (s: string) =
 
 let manage (albums: Db.AlbumDetails list) = [
     h2 "Index"
+
+    p [
+        aHref Path.Admin.createAlbum (text "Create new album")
+    ]
+
     table [
         yield tr [
             for t in ["Artist"; "Title"; "Genre"; "Price"] -> th [text t]
@@ -140,3 +149,67 @@ let manage (albums: Db.AlbumDetails list) = [
         ]
     ]
 ]
+
+type Field<'a> = {
+    Label : string
+    Xml : Form<'a> -> Suave.Html.Xml
+}
+
+type FieldSet<'a> = {
+    Legend : string
+    Fields : Field<'a> list
+}
+
+type FormLayout<'a> = {
+    Fieldsets : FieldSet<'a> list
+    SubmitText : string
+    Form : Form<'a>
+}
+
+let renderForm (layout : FormLayout<_>) =
+    form [
+        for set in layout.Fieldsets ->
+            fieldset [
+                yield legend set.Legend
+
+                for field in set.Fields do
+                    yield divClass "editor-label" [
+                        text field.Label
+                    ]
+                    yield divClass "editor-field" [
+                        field.Xml layout.Form
+                    ]
+
+            ]
+        yield submitInput layout.SubmitText
+    ]
+
+
+let createAlbum genres artists = [
+    h2 "Create"
+
+    renderForm 
+        {
+            Form = Form.album
+            SubmitText = "Create album"
+            Fieldsets = 
+            [
+                {
+                    Legend = "Album"
+                    Fields = 
+                    [
+                        { Label = "Genre"; Xml = selectInput (fun f -> <@ f.GenreId @>) genres None }
+                        { Label = "Artist"; Xml = selectInput (fun f -> <@ f.ArtistId @>) artists None}
+                        { Label = "Title"; Xml = input (fun f -> <@ f.Title @>) []}
+                        { Label = "Price"; Xml = input (fun f -> <@ f.Price @>) []}
+                        { Label = "Album art url"; Xml = input (fun f -> <@ f.ArtUrl @>) ["value", "/placeholder.gif"]}
+                    ]
+                }
+            ]
+        }
+
+    div [
+        aHref Path.Admin.manage (text "Back to list")
+    ]
+]
+
