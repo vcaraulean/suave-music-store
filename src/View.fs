@@ -144,6 +144,10 @@ let manage (albums: Db.AlbumDetails list) = [
                 td [text t]
 
             yield td [
+                aHref (sprintf Path.Admin.updateAlbum album.AlbumId) (text "Edit")
+                text " | "
+                aHref (sprintf Path.Store.details album.AlbumId) (text "Details")
+                text " | "
                 aHref (sprintf Path.Admin.delete album.AlbumId) (text "Delete")
             ]
         ]
@@ -213,3 +217,29 @@ let createAlbum genres artists = [
     ]
 ]
 
+let editAlbum (album : Db.Album) genres artists = [
+    h2 "Update"
+
+    renderForm 
+        {
+            Form = Form.album
+            SubmitText = "Update album / Save changes"
+            Fieldsets = 
+            [
+                {
+                    Legend = "Album"
+                    Fields = 
+                    [
+                        { Label = "Genre"; Xml = selectInput (fun f -> <@ f.GenreId @>) genres (Some(decimal album.GenreId)) }
+                        { Label = "Artist"; Xml = selectInput (fun f -> <@ f.ArtistId @>) artists (Some (decimal album.ArtistId))}
+                        { Label = "Title"; Xml = input (fun f -> <@ f.Title @>) ["value", album.Title]}
+                        { Label = "Price"; Xml = input (fun f -> <@ f.Price @>) ["value", formatDec album.Price]}
+                        { Label = "Album art url"; Xml = input (fun f -> <@ f.ArtUrl @>) ["value", "/placeholder.gif"]}
+                    ]
+                }
+            ]
+        }
+    div [
+        aHref Path.Admin.manage (text "Back to list")
+    ]
+]

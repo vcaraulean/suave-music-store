@@ -58,3 +58,10 @@ let createAlbum (artistId : int, genreId : int, title : string, price : decimal)
     ctx.``[dbo].[Albums]``.Create(artistId, genreId, price, title) |> ignore
     ctx.SubmitUpdates()
 
+let updateAlbum (album : Album) (artistId : int, genreId : int, title : string, price : decimal) (ctx : DbContext) =
+    album.Title <- title
+    album.Price <- price
+    album.ArtistId <- artistId
+    album.GenreId <- genreId
+    ctx.SubmitUpdates()
+    

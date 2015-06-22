@@ -68,9 +68,24 @@ let createAlbum =
             html (View.createAlbum genres artists))
         POST >>= bindToForm Form.album (fun form ->
             Db.createAlbum (int form.ArtistId, int form.GenreId, form.Title, form.Price) ctx 
-            Redirection.FOUND Path.Admin.manage
-        )
+            Redirection.FOUND Path.Admin.manage)
     ]
+
+let editAlbum id =
+    let ctx = Db.getContext()
+    match Db.getAlbum id ctx with
+    | Some album ->
+        choose [
+            GET >>= warbler (fun _ ->
+                let genres = Db.getGenres ctx |> List.map (fun g -> decimal g.GenreId, g.Name)
+                let artists = Db.getArtists ctx |> List.map (fun f -> decimal f.ArtistId, f.Name)
+                html (View.editAlbum album genres artists))
+            POST >>= bindToForm Form.album (fun form -> 
+                Db.updateAlbum album (int form.ArtistId, int form.GenreId, form.Title, form.Price) ctx
+                Redirection.FOUND Path.Admin.manage)
+
+        ]
+    | None _ -> never
 
 let webPart = 
     choose [
@@ -82,6 +97,7 @@ let webPart =
         path Path.Admin.manage >>= manage
         pathScan Path.Admin.delete deleteAlbum
         path Path.Admin.createAlbum >>= createAlbum
+        pathScan Path.Admin.updateAlbum editAlbum
 
         pathRegex "(.*)\.(css|png|gif)" >>= Files.browseHome
 
